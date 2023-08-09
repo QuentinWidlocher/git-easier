@@ -11,11 +11,10 @@
 	) {
 		const form = new FormData(event.currentTarget);
 
-		console.log(...form.values());
-
 		await Promise.all([
 			data.store.set('repo-path', form.get('repoPath')),
-			data.store.set('branch', form.get('branch'))
+			data.store.set('working-branch', form.get('working-branch')),
+			data.store.set('source-branch', form.get('source-branch'))
 		]);
 
 		saved = true;
@@ -35,13 +34,23 @@
 		/>
 	</div>
 	<div class="flex flex-col">
-		<label class="text-slate-500 ml-6" for="branch">Branch to work on</label>
+		<label class="text-slate-500 ml-6" for="working-branch">Branch to work on</label>
+		<input
+			class="flex-1 rounded-full border border-slate-400 pl-5 pr-3 py-2"
+			type="text"
+			placeholder="develop"
+			name="working-branch"
+			bind:value={data.workingBranch}
+		/>
+	</div>
+	<div class="flex flex-col">
+		<label class="text-slate-500 ml-6" for="source-branch">Branch to sync with</label>
 		<input
 			class="flex-1 rounded-full border border-slate-400 pl-5 pr-3 py-2"
 			type="text"
 			placeholder="main"
-			name="branch"
-			bind:value={data.branch}
+			name="source-branch"
+			bind:value={data.sourceBranch}
 		/>
 	</div>
 	<button

@@ -8,10 +8,12 @@ export const load = (({ depends }) => {
 
   return Promise.all([
     store.get('repo-path'),
-    store.get('branch'),
-  ]).then(([repoPath, branch]) => ({
+    store.get('working-branch'),
+    store.get('source-branch'),
+  ]).then(([repoPath, workingBranch, sourceBranch]) => ({
     repoPath,
-    branch,
+    workingBranch,
+    sourceBranch,
     store,
   }))
 }) satisfies PageLoad;

@@ -4,7 +4,7 @@ import type { PageLoad } from './$types';
 
 export const load = (({ depends }) => {
   depends('changes:list')
-  console.log('changes list loading');
+
   return getChangedFiles().then((files) => {
     return files.reduce(
       (acc, file) => {

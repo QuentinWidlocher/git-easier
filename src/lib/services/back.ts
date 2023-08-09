@@ -2,7 +2,7 @@ import type { GitFile } from '$lib/types/gitfile';
 import { invoke, type InvokeArgs } from '@tauri-apps/api/tauri';
 
 type Commands = {
-  "get_changed_files": [never, Array<GitFile>]
+  "get_changed_files": [void, Array<GitFile>]
   "move_file": [{
     path: string,
     action: 'stage' | 'unstage'
@@ -11,6 +11,7 @@ type Commands = {
     action: 'stage' | 'unstage'
   }, void]
   "publish": [{ message?: string | undefined }, void]
+  "rebase_onto_source_branch": [void, void]
 };
 
 type CommandName = keyof Commands;
@@ -23,14 +24,8 @@ function typedInvoke<T extends CommandName>(command: T,) {
   }
 }
 
-function typedInvokeWithoutArgs<T extends CommandName>(command: T,) {
-  return function(): Promise<CommandReturnType<T>> {
-    return invoke(command);
-  }
-}
-
-
-export const getChangedFiles = typedInvokeWithoutArgs("get_changed_files");
+export const getChangedFiles = typedInvoke("get_changed_files");
 export const moveFile = typedInvoke("move_file");
 export const moveAllFile = typedInvoke("move_all_files");
 export const publish = typedInvoke("publish");
+export const syncWithSource = typedInvoke("rebase_onto_source_branch");

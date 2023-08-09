@@ -1,11 +1,7 @@
-use std::{
-    path::Path,
-    process::{Command, ExitStatus},
-};
+use std::{ffi::OsStr, process::Command};
 
-use git2::{IndexAddOption, Repository, Status};
+use git2::{Repository, Status};
 use serde::Serialize;
-use tauri_plugin_store::with_store;
 
 use crate::AppState;
 
@@ -73,10 +69,14 @@ fn get_current_repo(repo_path: &String) -> Result<Repository, String> {
     Repository::open(repo_path).map_err(|e| e.to_string())
 }
 
-fn git(command: &str, repo_path: &String) -> Result<(), String> {
+fn git<I, S>(args: I, repo_path: &String) -> Result<(), String>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
     Command::new("git")
         .current_dir(repo_path)
-        .args(command.split(" "))
+        .args(args)
         .output()
         .map(|output| {
             if output.status.success() {
@@ -86,6 +86,26 @@ fn git(command: &str, repo_path: &String) -> Result<(), String> {
             }
         })
         .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub fn rebase_onto_source_branch(state: tauri::State<AppState>) -> Result<(), String> {
+    git(["stash", "save", "--include-untracked"], &state.repo_path)?;
+    git(["checkout", &state.source_branch], &state.repo_path)?;
+    git(["pull", "origin"], &state.repo_path)?;
+    git(["checkout", &state.working_branch], &state.repo_path)?;
+    git(["rebase", &state.source_branch], &state.repo_path)?;
+    git(
+        [
+            "push",
+            "--force-with-lease",
+            "origin",
+            &state.working_branch,
+        ],
+        &state.repo_path,
+    )?;
+    git(["stash", "apply"], &state.repo_path)?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -110,11 +130,8 @@ pub fn move_file(
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
     match action.as_str() {
-        "stage" => git(format!("add {}", path).as_str(), &state.repo_path),
-        "unstage" => git(
-            format!("restore --staged {}", path).as_str(),
-            &state.repo_path,
-        ),
+        "stage" => git(["add", path.as_str()], &state.repo_path),
+        "unstage" => git(["restore", "--staged", path.as_str()], &state.repo_path),
         _ => Err("Unknown action".to_string())?,
     }
 }
@@ -122,25 +139,22 @@ pub fn move_file(
 #[tauri::command]
 pub fn move_all_files(action: String, state: tauri::State<AppState>) -> Result<(), String> {
     match action.as_str() {
-        "stage" => git("add .", &state.repo_path),
-        "unstage" => git("restore --staged .", &state.repo_path),
+        "stage" => git(["add ."], &state.repo_path),
+        "unstage" => git(["restore", "--staged", "."], &state.repo_path),
         _ => Err("Unknown action".to_string())?,
     }
 }
 
 #[tauri::command]
 pub fn publish(message: Option<String>, state: tauri::State<AppState>) -> Result<(), String> {
-    let commit_message = message.unwrap_or(format!("{}", chrono::Local::now()));
+    let commit_message = message.unwrap_or(format!(
+        "{}",
+        chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
+    ));
 
-    git(
-        format!("commit -m \"{}\"", commit_message).as_str(),
-        &state.repo_path,
-    )?;
+    git(["commit", "-m", &commit_message], &state.repo_path)?;
 
-    git(
-        format!("push origin {}", state.branch).as_str(),
-        &state.repo_path,
-    )?;
+    git(["push", "origin", &state.working_branch], &state.repo_path)?;
 
     Ok(())
 }

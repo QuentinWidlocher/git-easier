@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ChangeColumn from './change-column.svelte';
-	import { publish } from '$lib/services/back';
+	import { publish, syncWithSource } from '$lib/services/back';
 	import type { PageData } from './$types';
 	import { invalidate } from '$app/navigation';
 	import { listen } from '@tauri-apps/api/event';
@@ -8,17 +8,23 @@
 	export let data: PageData;
 
 	let message = '';
+	let publishing = false;
 
 	async function handlePublish() {
 		if (data.staged.length === 0) return;
 
+		publishing = true;
+
 		await publish({ message: message || undefined });
 		await invalidate('changes:list');
+
+		publishing = false;
 		message = '';
 	}
 
-	listen('tauri://focus', () => {
-		invalidate('changes:list');
+	listen('tauri://focus', async () => {
+		await syncWithSource();
+		await invalidate('changes:list');
 	});
 </script>
 
@@ -43,10 +49,11 @@
 			bind:value={message}
 		/>
 		<button
-			class="px-5 py-2 rounded-full bg-sky-500 text-white border transform active:translate-y-px border-sky-400 hover:bg-sky-600 active:bg-sky-700 active:text-sky-100 hover:border-sky-500"
+			class:animate-pulse={publishing}
+			class=" px-5 py-2 rounded-full bg-sky-500 text-white border transform active:translate-y-px border-sky-400 hover:bg-sky-600 active:bg-sky-700 active:text-sky-100 hover:border-sky-500"
 			disabled={data.staged.length === 0}
 		>
-			Publish these changes
+			{publishing ? 'Publishing...' : 'Publish these changes'}
 		</button>
 	</form>
 </div>
