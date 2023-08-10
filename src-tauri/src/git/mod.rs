@@ -1,7 +1,6 @@
-use std::{ffi::OsStr, process::Command};
-
 use git2::{Repository, Status};
 use serde::Serialize;
+use tauri::api::process::Command;
 
 use crate::AppState;
 
@@ -72,17 +71,17 @@ fn get_current_repo(repo_path: &String) -> Result<Repository, String> {
 fn git<I, S>(args: I, repo_path: &String) -> Result<(), String>
 where
     I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
+    S: AsRef<str>,
 {
     Command::new("git")
-        .current_dir(repo_path)
+        .current_dir(repo_path.into())
         .args(args)
         .output()
         .map(|output| {
             if output.status.success() {
                 Ok(())
             } else {
-                Err(String::from_utf8(output.stderr).unwrap())
+                Err(output.stderr)
             }
         })
         .map_err(|e| e.to_string())?
