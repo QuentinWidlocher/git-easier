@@ -1,7 +1,16 @@
+<<<<<<< Updated upstream
 use std::{ffi::OsStr, process::Command};
 
 use git2::{Repository, Status};
 use serde::Serialize;
+=======
+use git2::{IndexAddOption, Repository, Status};
+use serde::Serialize;
+use std::process::ExitStatus;
+use tauri::api::process::Command;
+
+use tauri_plugin_store::with_store;
+>>>>>>> Stashed changes
 
 use crate::AppState;
 
@@ -75,14 +84,19 @@ where
     S: AsRef<OsStr>,
 {
     Command::new("git")
+<<<<<<< Updated upstream
         .current_dir(repo_path)
         .args(args)
+=======
+        .current_dir(repo_path.into())
+        .args(command.split(" "))
+>>>>>>> Stashed changes
         .output()
         .map(|output| {
             if output.status.success() {
                 Ok(())
             } else {
-                Err(String::from_utf8(output.stderr).unwrap())
+                Err(output.stderr)
             }
         })
         .map_err(|e| e.to_string())?
