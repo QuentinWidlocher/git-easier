@@ -138,7 +138,7 @@ pub fn move_file(
 #[tauri::command]
 pub fn move_all_files(action: String, state: tauri::State<AppState>) -> Result<(), String> {
     match action.as_str() {
-        "stage" => git(["add ."], &state.repo_path),
+        "stage" => git(["add", "."], &state.repo_path),
         "unstage" => git(["restore", "--staged", "."], &state.repo_path),
         _ => Err("Unknown action".to_string())?,
     }

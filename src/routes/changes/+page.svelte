@@ -9,6 +9,7 @@
 
 	let message = '';
 	let publishing = false;
+	let syncing = false;
 
 	async function handlePublish() {
 		if (data.staged.length === 0) return;
@@ -22,12 +23,22 @@
 		message = '';
 	}
 
-	listen('tauri://focus', async () => {
+	async function handleSync() {
+		syncing = true;
 		await syncWithSource();
 		await invalidate('changes:list');
-	});
+		syncing = false;
+	}
 </script>
 
+<button
+	class="mx-auto px-3 py-2 rounded-full bg-sky-50 text-sky-500 border transform active:translate-y-px border-sky-500/20 hover:bg-sky-200 active:bg-sky-300 active:text-sky-600 hover:border-sky-400"
+	class:animate-pulse={syncing}
+	on:click={handleSync}
+	disabled={publishing || syncing}
+>
+	{syncing ? '🔄 Syncing...' : '🔄 Sync with source'}
+</button>
 <div class="p-5 grid grid-rows-[1fr_auto] grid-cols-2 gap-5 flex-1 overflow-y-hidden">
 	<ChangeColumn
 		title="Local changes ({data.unstaged.length})"
@@ -51,7 +62,7 @@
 		<button
 			class:animate-pulse={publishing}
 			class=" px-5 py-2 rounded-full bg-sky-500 text-white border transform active:translate-y-px border-sky-400 hover:bg-sky-600 active:bg-sky-700 active:text-sky-100 hover:border-sky-500"
-			disabled={data.staged.length === 0}
+			disabled={publishing || syncing || data.staged.length === 0}
 		>
 			{publishing ? 'Publishing...' : 'Publish these changes'}
 		</button>
