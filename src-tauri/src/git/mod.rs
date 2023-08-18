@@ -87,23 +87,40 @@ where
         .map_err(|e| e.to_string())?
 }
 
-#[tauri::command]
-pub fn rebase_onto_source_branch(state: tauri::State<AppState>) -> Result<(), String> {
-    git(["stash", "save", "--include-untracked"], &state.repo_path)?;
-    git(["checkout", &state.source_branch], &state.repo_path)?;
+fn do_rebase(state: &tauri::State<AppState>) -> Result<(), String> {
+    git(["checkout", state.source_branch.as_str()], &state.repo_path)?;
     git(["pull", "origin"], &state.repo_path)?;
-    git(["checkout", &state.working_branch], &state.repo_path)?;
-    git(["rebase", &state.source_branch], &state.repo_path)?;
+    git(
+        ["checkout", state.working_branch.as_str()],
+        &state.repo_path,
+    )?;
+    git(["rebase", state.source_branch.as_str()], &state.repo_path)?;
     git(
         [
             "push",
             "--force-with-lease",
             "origin",
-            &state.working_branch,
+            state.working_branch.as_str(),
         ],
         &state.repo_path,
     )?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn rebase_onto_source_branch(state: tauri::State<AppState>) -> Result<(), String> {
+    git(["stash", "save", "--include-untracked"], &state.repo_path)?;
+
+    let res: Result<(), String> = do_rebase(&state);
+
+    let _ = res.is_err_and(|_| {
+        let _ = git(["checkout", &state.working_branch], &state.repo_path);
+        false
+    });
+
     git(["stash", "apply"], &state.repo_path)?;
+
     Ok(())
 }
 

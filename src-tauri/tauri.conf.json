@@ -56,9 +56,11 @@
       {
         "fullscreen": false,
         "height": 800,
+        "width": 1200,
+        "minHeight": 450,
+        "minWidth": 990,
         "resizable": true,
-        "title": "Git Easier",
-        "width": 1200
+        "title": "Git Easier"
       }
     ]
   }

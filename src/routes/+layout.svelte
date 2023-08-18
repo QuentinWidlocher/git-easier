@@ -1,31 +1,35 @@
 <script>
 	import '../app.postcss';
 	import { page } from '$app/stores';
+	import { Tabs, TabsList, TabsTrigger } from '$components/ui/tabs';
 
-	const activeClass = 'bg-sky-100 text-sky-600';
-	const inactiveClass = 'bg-slate-100 text-slate-500';
+	$: currentTab = $page.route.id?.slice(1);
 </script>
 
-<main class="h-screen flex flex-col">
-	<header class="p-5 w-full mb-2">
-		<nav class="grid place-content-center">
-			<ul class="flex gap-5">
-				<li
-					class="rounded-full px-3 py-1 {$page.route.id == '/changes'
-						? activeClass
-						: inactiveClass}"
-				>
-					<a href="/changes">Your changes</a>
-				</li>
-				<li
-					class="rounded-full px-3 py-1 {$page.route.id == '/settings'
-						? activeClass
-						: inactiveClass}"
-				>
-					<a href="/settings">Settings</a>
-				</li>
-			</ul>
-		</nav>
+<main class="h-screen grid grid-cols-1 grid-rows-[5rem_1fr]">
+	<header class=" z-10 h-full w-full mb-2 flex">
+		<Tabs class="m-auto" value={currentTab}>
+			<TabsList>
+				<a href="/changes">
+					<TabsTrigger value="changes">Your changes</TabsTrigger>
+				</a>
+				<a href="/settings">
+					<TabsTrigger value="settings">Settings</TabsTrigger>
+				</a>
+			</TabsList>
+		</Tabs>
 	</header>
-	<slot />
+	<div class="h-full w-full flex flex-col overflow-y-hidden">
+		<slot />
+	</div>
 </main>
+
+<style>
+	:root {
+		--primary: 189 94% 43%;
+		--muted: 210 40% 96%;
+		--secondary: var(--muted);
+		--accent: var(--muted);
+		--radius: 1rem;
+	}
+</style>
